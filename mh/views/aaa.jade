@@ -1,0 +1,17 @@
+extends ./base
+block append css
+  style.
+    #button {
+      background-color: #00abd6;
+      background-image: url(http://www.transparenttextures.com/patterns/gold-scale.png);
+    }
+    body {
+      background-color : #fff;
+    }
+block content
+  div(class="container jumbotron" style="margin-top: 51px;background-color:#fff;margin-top:50px;")
+    h2 あなたの手によって
+    h1(class="text-center") 73人
+    h3(class="text-right") の電大生が爆発しました
+    div(style="text-align:center")
+      button(id="button" type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal") 電大生を爆発させる

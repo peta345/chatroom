@@ -1,0 +1,23 @@
+extends ./base
+block append css
+  style.
+    #button {
+      background-color: #cdd46f;
+      background-image: url("images/try.png");
+      color: #1E90FF;
+    }
+    #button:hover {
+      color : black;
+    }
+block content
+  header(class="jumbotron" style="margin-top:51px")
+    div(class="container")
+      h1 初めまして
+      h3 オタクな狩人さん
+      form(class="form-horizontal" method="post" action="/login")
+        div(class="form-group")
+          div(class="col-sm-6")
+            p
+              input(type="text" name="name" class="form-control" placeholder="what your name?" )
+            p
+              button(id="button" type="submit" href="/login" class="btn btn-lg" role="button") Submit &raquo;

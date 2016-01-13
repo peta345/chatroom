@@ -1,0 +1,272 @@
+extends ./base
+block append css
+  style.
+    body {
+      background-color: #fff;
+    }
+    #button {
+      background: url("images/diagmonds.png");
+      background-color: #00abd6;
+    }
+    #leave-button {
+      background: url("images/cubes.png");
+      backgroud-color: #fff;
+    }
+
+block content
+  header(style="margin-top:51px" class="container")
+    div(class="page-header text-center")
+      h2 よおこそ、
+        span(id="fuckname") #{name}
+        さん
+      div(id="roomCheck")
+      div(id="my-div")
+    div(id="msg-area")
+    div(id="myform" class="form-inline")
+      div(class="row" id="up")
+        div(class="col-sm-4")
+        div(class="form-group col-sm-4" id="under")
+        div(class="col-sm-4")
+    table(class="table container")
+      thead
+        tr
+          //data
+          th #
+          th Room
+          th Comment
+          th Master
+          th Num
+      tbody(id="tbodyID")
+        tr
+          td 11:45:14
+          td ニート団
+          td 誰でも歓迎
+          td 長谷川誠
+          td 3/4
+    div(class="jumbotron" style="background-color: #fff;")
+      div(style="text-align:center;")
+        button(id="button" type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal")
+          span(class="glyphicon glyphicon-apple")  部屋をつくる
+
+  // this is modal
+  div(class="modal fade" id="myModal" tabindex="-1")
+    div(class="modal-dialog" role="document")
+      div(class="modal-content")
+        div(class="modal-header")
+          button(type="button" class="close" data-dismiss="modal" aria-label="Close")
+            span(aria-hidden="true") &times;
+          h4(class="modal-title" id="myModalLabel") 部屋をつくる
+        form(method="post" action="/room")
+          div(class="modal-body")
+              div(class="form-group" id="input-field")
+                label(for="room-name" class="control-label") RoomName:
+                input(type="text" class="form-control" id="room-name" name="roomname" placeholder="roomname" required maxlength="8")
+                label(for="comment" class="control-label") Message:
+                input(type="text" class="form-control" id="comment" name="mes" placeholder="your message" maxlength="15" required)
+                label(for="roomkey" class="control-label") Key:数字4字です！
+                input(type="text" pattern="\d{4}" class="form-control" id="roomKey" name="key" placeholder="num only" maxlength="4")
+          div(class="modal-footer")
+            button(type="button" class="btn btn-default" data-dismiss="modal") Close
+            button(type="button" class="btn btn-primary" id="makingID") Make
+  //this si small-modal
+  div(id="sm-modal" class="modal fade bs-example-modal-sm" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel")
+    div(class="modal-dialog modal-sm")
+      div(class="modal-content")
+        div(class="modal-header")
+          button(type="button" class="close" data-dismiss="modal" aria-label="Close")
+            span(aria-hidden="true") &times;
+          h4(class="modal-title" id="myModalLabel") Check Password
+          div(class="modal-body")
+            div(class="form-group" id="input-field")
+              label(for="roompass" class="control-label") Password:
+              input(type="text" class="form-control" id="enter-pass" name="roompass" placeholder="whats pass?" required maxlength="4")
+          div(class="modal-footer")
+            button(type="button" class="btn btn-default" data-dismiss="modal") Close
+            button(type="button" class="btn btn-info" id="join") Join
+
+
+block append script
+  script(src="/socket.io/socket.io.js")
+  script.
+    $('#myModal').on('shown.bs.modal', function () {
+      $('#room-name').focus();
+    })
+    var socket = io.connect('http://localhost:3000');
+
+    socket.on("result", function(data){result(data);});
+    socket.on("delete", function(user){ userdelete(user); });
+    socket.on("passCheck", function(pkey){ passCheck(pkey); });
+
+    function table_make (data){
+        $("#tbodyID > tr:last").after("<tr><td>" + data.tabledata[0]
+        + "</td><td>" + data.tabledata[1] + "</td><td>"
+        + data.tabledata[2] + "</td><td>"
+        + data.tabledata[3] + "</td><td>"
+        + data.tabledata[4] + "</td></tr>");
+        $("#tbodyID > tr:last").addClass("nanj").attr("id", data.tabledata[5]);
+    }
+
+    function result(data){
+      if(data.result==0){
+        alert(data.msg);
+      } else if(data.result==1){// 自分以外にテーブルを表示
+        table_make(data);
+      } else if(data.result==2){
+        table_make(data);
+        $("#roomCheck").append("<span>あなたは　【 <span id='marisa'>" + data.tabledata[1] + "</span> 】に参加しています</span>");
+        $("#my-div").append("<button class='btn btn-default btn-sm' id='leave-button'>たいしゅつ</button> ");
+        //$("#my-div").append("<div class='text-right'>/" + $("#fuckname").text() + "/</div>");
+        $("#under").append("<label for='msg'>@ <span class='glyphicon glyphicon-pencil' aria-hidden='true'></span> </label>");
+        $("#under").append("<input id='msg' class='form-control' type='text'>");
+        socket.emit("entering", {name: $("#fuckname").text(), roomname:data.tabledata[1] });
+      } else { //部屋に参加した時の処理　
+        $("#roomCheck").append("<span>あなたは　【 <span id='marisa'>" + data.name + "</span> 】に参加しています</span>");
+        $("#my-div").append("<button class='btn btn-default btn-sm' id='leave-button'>たいしゅつ</button> ");
+        //$("#my-div").append("<div class='text-right'>/" + $("#fuckname").text() + "/</div>");
+        $("#under").append("<label for='msg'>@ <span class='glyphicon glyphicon-pencil' aria-hidden='true'></span> </label>");
+        $("#under").append("<input id='msg' class='form-control' type='text'>");
+        socket.emit("entering", {flg:1, name: $("#fuckname").text(), roomname:data.name });
+      }
+    }
+
+    // function entering(){
+    //   $("#msg-area").append($('<div style="color:blue" class="text-center">').text("*** " + $('#fuckname').text() + " ***が入室しました"));
+    // }
+
+
+    // delete
+    function userdelete(user){
+      var roomCheck = document.getElementById("roomCheck");
+      roomCheck.innerHTML = "";
+      // テーブルタグ削除
+      var tbody = document.getElementById("tbodyID");
+      var tr = document.getElementById(user.id);
+      tbody.removeChild(tr);
+    }
+    var enter_room_key="";
+    //pass Check
+    function passCheck(pkey){
+      var flg = 0;
+      // roomkeyHashを取得してきて、本当にへやが存在しているか確認
+      for(var key in pkey.rkh){
+        if(key == pkey.id && !(socket.id in pkey.rkh)){
+          enter_room_key = pkey.rkh[key];
+          $("#sm-modal").modal("show");
+          $("#join").focus();
+          flg = 1;
+          break;
+        }
+      }
+      if(!flg) alert("部屋に参加している状態です");
+    }
+    //this is jquery and Password Checker
+    $(function(){
+
+      $("#makingID").click(function(){
+        var data = {};
+        data.username = $("#fuckname").text();
+        data.roomname = $("#room-name").val();
+        data.mes = $("#comment").val();
+        data.key = $("#roomKey").val();
+        //alert(data.roomname + " + " + data.mes + " + " + data.key);
+        socket.emit("roomMaking", data);
+        $("#myModal").modal("hide");
+        $("#input-field > inut").each(function(){
+          $(this).val('');
+        });
+      })
+
+      socket.on('msg_from_server', function(data){
+        $("#msg-area").append($('<div>').text("[ " + data.name + " ]" + " : " + data.msg));
+      });
+
+      socket.on('noti', function(data){
+        $("#msg-area").append($('<div id="new-user" style="color:blue" class="text-center">').text("*** " + data.name + " ***が入室しました"));
+        $('td').each(function(){//動的だとeachが動かないk農政あり
+          if($(this).text() == data.room){
+            var s = $(this).next().next().next().text();
+            alert(s);
+          }
+        })
+      })
+      // socket.on("entering", function(data){
+      //   alert("alert");
+      //   $("#msg-area").append($('<div style="color:blue" class="text-center">').text("*** " + data.data + " ***が入室しました"));
+      // })
+
+      $("#tbodyID").on('click', 'tr.nanj', function(){
+         var id = $(this).attr("id");
+         socket.emit('Checker', id);
+      });
+
+      $(document).on('click', '#leave-button', function(){
+        //alert(io.sockets.adapter.rooms[$('#marisa').text()]);
+        var i = 0;
+        //部屋主が退出
+        setTimeout(function(){
+          $("#tbodyID > tr").each(function(){
+            if($(this).attr("id") == socket.id){
+              $(this).remove();
+            }
+          });
+        }, 100);
+        $("#roomCheck").children().remove();
+        $("#marisa").remove();
+        $("#leave-button").remove();
+        $("#under").children().remove();
+        $('#msg-area').children().remove();
+        var data = {};
+        data.roomname = $("#marisa").text();
+        data.id = socket.id;
+        socket.emit('leave', data);
+      })
+
+      // -- pass enter
+      $("#join").on('click', function(){
+        $("sm-modal").modal("hide");
+        var guest = {};
+        var join_key = document.getElementById("enter-pass").value;
+        guest.name = $('#fuckname').text();
+        guest.key = join_key;
+        if(!join_key.match(/\d{4}/)){
+          alert("パスワードは数値4字です");
+          $("#sm-modal").modal("hide");
+          return;
+        }
+        if(enter_room_key == join_key){
+          socket.emit("Enter", guest);
+          $("#sm-modal").modal("hide");
+        } else {
+          alert("パスワードが違います");
+          $("#sm-modal").modal("hide");
+        }
+        $('#enter-pass').each(function(){
+          $(this).val('');
+        });
+      });
+
+      $("#button").hover(function(){
+        $(this).stop().animate({"opacity":"0.7"});
+      }, function(){
+        $(this).stop().animate({"opacity":"1"});
+      });
+
+      $(document).on({
+        "mouseenter" : function(){ $(this).stop().css("background-color", "#7cb077").animate({width:300}); },
+        "mouseleave" : function(){ $(this).stop().css("background-color", "#fff").animate({width:100}); }
+      }, "#leave-button");
+
+
+      $("#under").on('keypress', "#msg", function(e){
+        if(e.which == 13){
+          var data = {};
+          data.name = $("#fuckname").text();
+          data.msg = $("#msg").val();
+          data.room = $("#marisa").text();
+          //console.log(data.room + "  hello");
+          socket.emit("msg_from_client", data);
+          $("#msg").val("");
+        }
+      });
+
+    }) // --function --
